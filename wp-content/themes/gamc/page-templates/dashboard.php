@@ -7,6 +7,7 @@ if (!is_user_logged_in()) {
 }
 
 get_header();
+$current_user = wp_get_current_user();
 ?>
 
 <!-- AdminLTE CSS -->
@@ -31,12 +32,6 @@ get_header();
             </a>
           </li>
           <li class="nav-item">
-            <a href="<?php echo site_url('/mi-perfil'); ?>" class="nav-link">
-              <i class="nav-icon fas fa-user"></i>
-              <p>Perfil</p>
-            </a>
-          </li>
-          <li class="nav-item">
             <a href="<?php echo wp_logout_url(); ?>" class="nav-link">
               <i class="nav-icon fas fa-sign-out-alt"></i>
               <p>Salir</p>
@@ -49,10 +44,11 @@ get_header();
 
   <!-- Content Wrapper -->
   <div class="content-wrapper p-4">
+
     <!-- Header -->
     <div class="content-header">
       <div class="container-fluid">
-        <h1>Bienvenido, <?php echo wp_get_current_user()->display_name; ?> 👋</h1>
+        <h1>Bienvenido, <?php echo esc_html($current_user->display_name); ?> 👋</h1>
       </div>
     </div>
 
@@ -60,25 +56,41 @@ get_header();
     <section class="content">
       <div class="container-fluid">
 
-        <!-- Ejemplo de widget con ACF Frontend -->
+        <!-- Tarjeta 1: Editar Perfil -->
         <div class="card card-primary">
           <div class="card-header">
             <h3 class="card-title">Editar Perfil</h3>
           </div>
           <div class="card-body">
-            <?php echo do_shortcode('[acf_frontend form="formulario_dashboard"]'); ?>
+            <?php 
+            acf_form(array(
+                'post_id'       => 'user_' . get_current_user_id(), // Guarda en el usuario actual
+                'field_groups'  => array(18), // ID del grupo de campos que quieres guardar
+                'form_attributes' => array(
+                    'id' => 'acf_form_dashboard', // ID del formulario
+                    'class' => 'acf-form'
+                ),
+                'submit_value'  => 'Guardar Cambios',
+                'return'        => site_url('/mi-panel'), // Redirige después de enviar
+                'html_before_fields' => '<div class="acf-fields-wrapper">',
+                'html_after_fields'  => '</div>'
+            ));
+                        ?>
           </div>
         </div>
 
-        <!-- Ejemplo de lista de posts -->
+        <!-- Tarjeta 2: Lista de posts del usuario -->
         <div class="card card-info mt-3">
           <div class="card-header">
             <h3 class="card-title">Tus Entradas</h3>
           </div>
           <div class="card-body">
             <?php
-            $posts = get_posts(['author' => get_current_user_id(), 'numberposts' => 5]);
-            if ($posts):
+            $posts = get_posts(array(
+                'author' => $current_user->ID,
+                'numberposts' => 5
+            ));
+            if($posts):
             ?>
             <ul class="list-group">
               <?php foreach($posts as $post): ?>
@@ -93,10 +105,52 @@ get_header();
           </div>
         </div>
 
+        <!-- Tarjeta 3: Subida de imágenes -->
+        <div class="card card-success mt-3">
+          <div class="card-header">
+            <h3 class="card-title">Subir Imagen</h3>
+          </div>
+          <div class="card-body">
+            <?php
+            acf_form(array(
+                'post_id'       => 'user_' . $current_user->ID,
+                'field_groups'  => array(456), // Cambia por el ID de tu grupo de campos que tenga el campo imagen
+                'submit_value'  => 'Subir Imagen',
+                'return'        => site_url('/mi-panel')
+            ));
+            ?>
+          </div>
+        </div>
+
+        <!-- Tarjeta 4: Estadísticas simples -->
+        <div class="row mt-3">
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+              <div class="inner">
+                <h3><?php echo count_user_posts($current_user->ID); ?></h3>
+                <p>Entradas publicadas</p>
+              </div>
+              <div class="icon">
+                <i class="fas fa-pencil-alt"></i>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+              <div class="inner">
+                <h3><?php echo count_user_posts($current_user->ID, 'page'); ?></h3>
+                <p>Páginas creadas</p>
+              </div>
+              <div class="icon">
+                <i class="fas fa-file-alt"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
   </div>
-
 </div>
 
 <!-- AdminLTE JS -->
